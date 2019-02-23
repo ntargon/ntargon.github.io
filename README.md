@@ -3,7 +3,7 @@
 
 
 - [ドローン](drone.md)
-- [競技プログラミング](competitive_programming.md)
+- [競技プログラミング](competitive_programming/competitive_programming.md)
 - [英語](english.md)
 - [中国語](chinese.md)
 - [ルベーグ積分](lebesgue_integral.md)
