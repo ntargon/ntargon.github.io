@@ -6,5 +6,5 @@
 - [競技プログラミング](competitive_programming.md)
 - [英語](english.md)
 - [中国語](chinese.md)
-- [ルベーグ積分](lebegue_integral.md)
+- [ルベーグ積分](lebesgue_integral.md)
 - [就職関連](jobs.md)
