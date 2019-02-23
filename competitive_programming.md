@@ -13,3 +13,5 @@
 - 1日最低1時間程はやる。
 
 # 学習記録
+- [2/23](competitive_programming/20190223.md)
+
