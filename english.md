@@ -22,3 +22,15 @@
  if you reclaim something that you have lost or that has been taken away from you, you succeed in getting it back
 
 LEARNING TIME: 0h37m
+
+3/1 The power of passion and perseverance
+- stratospheric
+ stratosperic means found in or related to the stratosphere
+- stratosphere
+ the stratosphere is the layer of the Earth's atmosphere which lies between 7 and 31 miles above the earth.
+- parallelogram
+ a parallelogram is a four-sided shape in which each side is parallel to the side opposite it
+- cadet
+ a cadet is a young man or woman who is being trained in the armed services or the police force.
+
+Learning Time: 0h37m
