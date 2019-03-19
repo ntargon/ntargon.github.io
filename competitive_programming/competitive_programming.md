@@ -13,6 +13,9 @@
 - 1日最低1時間程はやる。
 
 # 学習記録
+[AtCoder Problem](https://kenkoooo.com/atcoder/?user=NTargon&kind=user)   
+
+
 - [2/23](20190223.md)
 - 3/6  
 ABC 075 B, ABC 096 C,	ABC 070 B
@@ -33,3 +36,5 @@ ABC 103 D, ABC 038 D
 ABC 076 C, ABC 007 B
 - 3/14  
 ABC 009 C
+- 3/19  
+ABC 083 C, ARC 006 C, ABC 005 C, ABC 091 C
