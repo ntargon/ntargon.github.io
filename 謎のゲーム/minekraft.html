@@ -1,0 +1,551 @@
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <title>Forked: 毎フレーム更新処理（update使用）</title>
+    <meta name="description" content="[ブログ記事](https://alkn203.github.io/blog/2016/11/29/phina-update-shape/)からの参照用" />
+
+    <style>*, *:before, *:after {
+  box-sizing: border-box;
+}
+html {
+  font-size: 62.5%;
+}
+body {
+  color: #444;
+  background-color: hsl(0, 0%, 96%);
+}
+h1 {
+  font-size: 1.8rem;
+}
+
+</style>
+  </head>
+  <body>
+    <script src="http://cdn.rawgit.com/phi-jp/phina.js/v0.2.0/build/phina.js"></script>
+    <script>// グローバルに展開
+phina.globalize();
+/*
+ * メインシーン
+ */
+ //定数
+var Kills = 0;
+var zandansuu = 12;
+var cool_time = 0;
+var num_enemy = 0;
+var SCREEN_X = 1920;
+var SCREEN_Y = 1028;
+var HP = 10;
+// アセット
+var ASSETS = {
+  // 画像
+  sound: {
+   'gun1': './効果音/gun1.mp3',
+   'gun2': './効果音/reload.mp3'
+ },
+  image: {
+
+    'zokotekil3':'./画像/7356.png',
+    'ppap':'./画像/ppap.png',
+    'chara': './画像/tesuto.png',
+    'bgm': './画像/hakuei131.jpg',
+     'baka':'./画像/N300_devil-eye.png',
+     'ika': './画像/N300_devil-eye.png',
+     'kita':'./画像/ABC.png',
+     'scope':'./画像/nc145355.png',
+     'ccc':'./画像/tesuto.png',
+     'gg':'./画像/gg.jpg',
+    },
+
+  spritesheet: {
+    "ppap_ss":{
+      "frame": {
+        "width": 32, // 1フレームの画像サイズ（横）
+        "height": 48, // 1フレームの画像サイズ（縦）
+        "cols": 12, // フレーム数（横）
+        "rows": 8, // フレーム数（縦）
+      },
+      "animations" : {
+        "stop": {
+          "frames": [1],
+          "next": "stop",
+          "frequency": 5
+        },
+        "nekoneko": {              //アニメーション名
+            "frames": [12,13,14,13],//表示するフレーム番号を配列として並べる(０始まり)
+            "next": "nekoneko",    //アニメーション終了時、次のアニメーションを指定
+            //                     //ループさせたい場合は自分を指定する
+            "frequency": 11      //フレーム毎の間隔
+        },
+        "aytw": {              //アニメーション名
+            "frames": [0,1,2,1],//表示するフレーム番号を配列として並べる(０始まり)
+            "next": "aytw",    //アニメーション終了時、次のアニメーションを指定
+            //                     //ループさせたい場合は自分を指定する
+            "frequency": 5      //フレーム毎の間隔
+        },
+        "inuinuinu": {              //アニメーション名
+            "frames": [24,25,26,25],//表示するフレーム番号を配列として並べる(０始まり)
+            "next": "inuinuinu",    //アニメーション終了時、次のアニメーションを指定
+            //                     //ループさせたい場合は自分を指定する
+            "frequency": 5      //フレーム毎の間隔
+        },
+      "nekofunnzyatta": {              //アニメーション名
+          "frames": [13],//表示するフレーム番号を配列として並べる(０始まり)
+          "next": "nekofunnzyatta",    //アニメーション終了時、次のアニメーションを指定
+          //                     //ループさせたい場合は自分を指定する
+          "frequency": 5      //フレーム毎の間隔
+      },
+      "inutonndetta": {              //アニメーション名
+          "frames": [25],//表示するフレーム番号を配列として並べる(０始まり)
+          "next": "inutonndetta",    //アニメーション終了時、次のアニメーションを指定
+          //                     //ループさせたい場合は自分を指定する
+          "frequency": 5      //フレーム毎の間隔
+      },
+      "13dazo!oboetokeyo": {              //アニメーション名
+          "frames": [37],//表示するフレーム番号を配列として並べる(０始まり)
+          "next": "13dazo!oboetokeyo",    //アニメーション終了時、次のアニメーションを指定
+          //                     //ループさせたい場合は自分を指定する
+          "frequency": 5      //フレーム毎の間隔
+      },
+    // "13dazo!oboetokeyo": {              //アニメーション名
+    //     "frames": [16],//表示するフレーム番号を配列として並べる(０始まり)
+    //     "next": "13dazo!oboetokeyo",    //アニメーション終了時、次のアニメーションを指定
+    //     //                     //ループさせたい場合は自分を指定する
+    //     "frequency": 5      //フレーム毎の間隔
+    // },
+      }
+    }
+  },
+};
+phina.define("MainScene", {
+  // 継承
+  superClass: 'DisplayScene',
+  // 初期化
+  init: function(option) {
+    // 親クラス初期化
+    this.superInit(option);
+    // 背景色
+    this.backgroundColor = 'black';
+    // Shapeを作成してシーンに追加・位置指定
+
+    var bgm = Sprite('bgm').addChildTo(this).setPosition(SCREEN_X/2,SCREEN_Y/2);
+    this.chara = Player(this).addChildTo(this);
+    this.Enemy_group = DisplayElement().addChildTo(this);
+    this.spawn = 200;
+    this.sisyasuu = 0;
+    // this.TAMA = Label().addChildTo(this);
+    // this.TAMA.text = "siritori risu....";
+    // this.TAMA.x = 1800
+    // this.TAMA.y = 80
+    this.Kills = Label().addChildTo(this);
+    this.Kills.text = "siritori risu....";
+    this.Kills.x = 1700
+    this.Kills.y = 80
+
+    this.cursor = Sprite("scope").addChildTo(this);
+    this.cursor.width = 600;
+    this.cursor.height = 600;
+
+    this.cursor.vx = 0;
+    this.cursor.vy = 0;
+    this.cursor.ax = 5;
+    this.cursor.ay = 5;
+
+    this.HP = Label().addChildTo(this);
+    this.HP.text = "HP"+HP
+    this.HP.x = 1700
+    this.HP.y = 120
+    this.HP.fontSize = 33
+    // var tzhn = Enemy(100).addChildTo(this.Enemy_group);
+
+    this.HitTime = 0;
+
+    this.update = function(app){
+      this.HP.text = "HP"+HP
+      if (HP<=0){
+        this.exit();
+      }
+
+      nezu = app.mouse;
+      // console.log(nezu.x);
+      this.cursor.vx += this.cursor.vx*(-0.1) + this.cursor.ax*(nezu.x - this.cursor.x)/(Math.abs(nezu.x - this.cursor.x) + 0.001);
+      this.cursor.vy += this.cursor.vy*(-0.1) + this.cursor.ax*(nezu.y - this.cursor.y)/(Math.abs(nezu.y - this.cursor.y) + 0.001);
+      // console.log(this.cursor.ax);
+      this.cursor.x+=this.cursor.vx;
+      this.cursor.y+=this.cursor.vy;
+      // this.cursor.x = nezu.x;q
+      // this.cursor.y = nezu.y;
+      // this.TAMA.text = "弾数" + this.chara.tama;
+      this.Kills.text = "❕スコア❕　" +　Kills;//
+
+
+
+
+
+      if (this.HitTime<1 && (nezu.getButton("left")) && cool_time>950    ){//(nezu.getButton("left")
+        this.hitTestEnemyMahoudann();
+        SoundManager.play('gun1');
+        SoundManager.play('gun2');
+        cool_time = 0;
+      }
+
+      if (nezu.getButton("left")){
+        this.HitTime +=app.deltaTime;
+        // if(cool_time>3000);{
+        //   cool_time = 0;
+        // }
+
+      }else{
+        this.HitTime *=0;
+      }
+      console.log(cool_time);
+      cool_time +=  app.deltaTime;
+
+      if (app.frame%this.spawn==0 && num_enemy < 3){
+        // spawn_num = Math.randint(1,3);
+        // for (i = 0; i < spawn_num; i ++ ){
+        //   Enemy(Math.randint(0,1700),this.chara).addChildTo(this.Enemy_group);
+        // };
+        var P=0.3
+        for(i=0;i<8;i++){
+            if(Math.random()<P){
+              Enemy(SCREEN_X/8*i,this.chara).addChildTo(this.Enemy_group);//頑張れ！あと11分
+            }
+        }
+      }
+    }},
+  /// update: function(app){
+  //   this.hitTestEnemyMahoudann();
+  // },
+
+  hitTestEnemyMahoudann: function(){
+    self = this;
+
+    this.Enemy_group.children.each(function(enemy){
+
+      var C1 = Circle(self.cursor.x,self.cursor.y,50);
+      var C2 = Circle(enemy.x, enemy.y,75);  //わかりました！
+      if (Collision.testCircleCircle(C1,C2)){
+        enemy.HP -=10;
+        Kills += 1;
+      }
+    });
+
+    //// this.Enemy_group.children.each(function(enemy){
+    ////   self.chara.mahoudann_group.children.each(function(mahoudann){
+    ////     // ここに当たり判定処理
+    ////     var C1 = Circle(mahoudann.x,mahoudann.y,3.14159265359);
+    ////     var C2 = Circle(enemy.x, enemy.y,10);
+
+    ////     }
+    ////
+    ////
+    ////   })
+    //// }
+  // )
+
+
+
+  },
+});
+
+phina.define("GGwwScene", {
+  // 継承
+  superClass: 'DisplayScene',
+  // 初期化
+  init: function(option) {
+    // 親クラス初期化
+    this.superInit(option);
+    var gg = Sprite('gg').addChildTo(this).setPosition(SCREEN_X/2,SCREEN_Y/2);
+    gg.width=1000
+    gg.height=1000
+
+
+
+  },
+  update: function(app){
+    key = app.keyboard;
+
+    if (key.getKey('5')){
+      HP = 3
+      this.exit();
+    }
+  },
+
+
+});
+
+
+/*
+ * プレイヤーギルド
+ */
+phina.define("Player", {
+  // Spriteクラスを継承
+  superClass: 'Sprite',
+  // コンストラクタ
+  init: function(scene) {
+
+    // 親クラス初期化
+    this.superInit('ppap', 64, 96);
+    // this.setScale(4.0);
+    this.x = 500;
+    this.y = 890;
+    this.speed = 10;
+    this.vx = 0;
+    this.scene = scene;
+    this.ss = FrameAnimation('ppap_ss').attachTo(this);
+    this.ss.gotoAndPlay('stop');
+    this.tama = 12;
+    this.cooltime = 0;
+    this.Hp = 990000;
+    this.speed = 1.99;
+    this.mahoudann_group = DisplayElement().addChildTo(this.scene);
+    this.cte_HP = 10;
+    // this.ss.gotoAndPlay('aytw');
+    // this.ss.gotoAndPlay('nekoneko');
+    // this.ss.gotoAndPlay('inuinuinu');
+  },
+  update: function(app){
+    key = app.keyboard;
+    if (key.getKey('left')) {
+      // console.log(1);
+        if (key.getKey('up')){
+          this.x -=this.speed*5.314159265359;
+        }else{
+          this.x -=this.speed;
+        }
+      // this.ss.gotoAndPlay('nekoneko');
+    }
+    if (key.getKey('right')) {
+      if (key.getKey('up')){
+      this.x +=this.speed*5.314159265359;
+      }else{
+        this.x +=this.speed;
+      }
+
+      // this.ss.gotoAndPlay('inuinuinu');
+    }
+    if(this.left<0){
+      this.right = 1920;
+     // SCREEN_X
+    }
+
+    if(this.right>1920){
+      this.left = 0;
+     // SCREEN_X
+    }
+
+    if (key.getKeyDown('right')){
+      this.ss.gotoAndPlay('inuinuinu');
+    }
+    if (key.getKeyDown('left')){
+      this.ss.gotoAndPlay('nekoneko');
+    }
+    // if (key.getKeyUp('left')){
+    //   this.ss.gotoAndPlay('nekohunnzyatta');
+    // }
+    if (key.getKeyUp('right')){
+      // console.log(2);
+      this.ss.gotoAndPlay('inutonndetta');
+    }
+    if (key.getKeyUp('left')){
+      // console.log(2);
+      this.ss.gotoAndPlay('nekofunnzyatta');
+    }
+    if (key.getKeyDown('space')){
+      // console.log(2);
+      this.ss.gotoAndPlay('13dazo!oboetokeyo');
+      this.shot();
+    }
+    if (key.getKeyDown('q')){
+      // console.log(2
+      this.reload();
+    }
+    this.cooltime -= app.deltaTime;
+    // console.log(this.cooltime);
+
+  },
+  shot: function(){
+    // console.log('hello');
+    // var naze = Mahoudann(this.x).addChildTo(this.scene);
+    if (this.tama>0 && this.cooltime <= 0){
+      var naze = Mahoudann(this.x).addChildTo(this.mahoudann_group);
+      this.tama-=1;
+    }
+  },
+  reload: function(){
+    if (zandansuu<=0){
+      // console.log('hello');
+      this.tama = 12;
+      this.cooltime = 100;
+      SoundManager.play('gun2');
+      zandansuu=12;// どうする～！どうする～！
+    }
+  },
+
+  laser: function(){
+    console.log('aaaa');
+  }
+});
+
+/*
+ *  mahoudannクラス
+ */
+phina.define("Mahoudann", {
+  // Spriteクラスを継承
+  superClass: 'Sprite',
+  // コンストラクタ
+  init: function(x) {
+    // 親クラス初期化
+    this.superInit('ika', 10, 50);
+    // this.setScale(4.0);
+    this.x = x;
+    this.y = 870;
+    // this.speed = 10;
+    // this.vx = 0;
+    // this.scene = scene;
+
+  },
+  update: function(app){
+    this.y-=100;
+
+    if (this.bottom < 100){
+      this.remove();
+    };
+  },
+
+
+});
+
+/*
+ *  enemy
+ */
+phina.define("Enemy", {
+  // Spriteクラスを継承
+  superClass: 'Sprite',
+  // コンストラクタ
+  init: function(x,hero) {
+    // 親クラス初期化
+    this.superInit('baka', 300, 400);
+    // this.setScale(4.0);
+    this.x = x;
+    this.y = 30;
+    this.hero = hero;
+
+    this.HP = 3.01;
+    // this.speed = 10;
+    // this.vx = 0;
+    // this.scene = scene;
+    // this.setInteractive(true);//
+    this.onpointstart=function(){
+      if (zandansuu>0){
+        zandansuu-=1;
+        this.remove();
+        SoundManager.play('gun1');
+      }
+
+    };
+  },
+  update: function(app){
+    this.y+=3;
+    console.log("hoge"+HP);
+    if (this.HP<0){
+      // this.remove();
+      this.setImage('kita');
+    }
+    if (this.y > 1090){
+      if (this.HP > 0){
+        // console.log("aaaaaaaaaaaaaaaaaaa"+this.HP);
+        HP -= 1;
+      }// 祝！あと7分！
+      this.remove();
+
+
+      // if (this.HP>0){
+      //   this.hero.cte_HP-=1;//どうする！同鶴どうする
+      //   console.log('3.14159265359');
+
+      // }
+
+
+
+
+    }
+  },
+
+});
+
+    // phina.globalize();
+    // /*
+    //  * メインシーン
+    //  */
+    // phina.define("MainScene", {
+    //   // 継承
+    //   superClass: 'DisplayScene',
+    //   // 初期化
+    //   init: function() {
+    //     // 親クラス初期化
+    //     this.superInit();
+    //     // 背景色
+////    //     // this.backgroundColor = 'black';
+////  ////  //     // var star = StarShape().addChildTo(this);
+////  ////  //     // // 透明度を指定
+////  ////  //     // star.tweener.fade(0.25, 2000).play();
+////  ////  // });
+    /*
+     * メイン処理
+     */
+  //   phina.main(function() {
+  //     // アプリケーションを生成
+  //     var app = GameApp({
+  //       // MainScene から開始
+  //       startLabel: 'main',
+  //     });
+  //     // 実行
+  //     app.run();
+  //   });
+  //
+  //
+  // },
+
+
+
+// });
+
+/*
+ * メイン処理
+ */
+phina.main(function() {
+  // アプリケーションを生成
+  var app = GameApp({
+    // MainScene から開始
+    startLabel: 'main',
+    assets: ASSETS,
+    width:SCREEN_X,
+    height: SCREEN_Y,
+    scenes:[
+      {
+        className: 'MainScene',
+        label: 'main',
+        nextLabel:'gg',
+      },
+      {
+        className: 'GGwwScene',
+        label: 'gg',
+        nextLabel:'main',
+      }
+      ],
+
+  });
+
+  // fps表示
+  //app.enableStats();
+  // 実行
+  app.run();
+});</script>
+  </body>
+</html>
